@@ -373,10 +373,10 @@ struct modbus_user_callbacks {
 	int (*input_reg_rd_fp)(uint16_t addr, float *reg);
 
 	/** Holding Register read callback */
-	int (*holding_reg_rd)(uint16_t addr, uint16_t *reg);
+	int (*holding_reg_rd)(uint16_t addr, uint16_t* reg, uint16_t reg_qty);
 
 	/** Holding Register write callback */
-	int (*holding_reg_wr)(uint16_t addr, uint16_t reg);
+	int (*holding_reg_wr)(uint16_t addr, uint16_t* reg, uint16_t reg_qty);
 
 	/** Floating Point Holding Register read callback */
 	int (*holding_reg_rd_fp)(uint16_t addr, float *reg);

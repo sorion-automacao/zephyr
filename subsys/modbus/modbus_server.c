@@ -361,43 +361,12 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	/* Reset the pointer to the start of the response payload */
 	presp = &ctx->tx_adu.data[1];
 	/* Loop through each register requested. */
-	while (reg_qty > 0) {
-		if (reg_addr < MODBUS_FP_EXTENSIONS_ADDR) {
-			uint16_t reg;
 
-			/* Read integer register */
-			err = ctx->mbs_user_cb->holding_reg_rd(reg_addr, &reg);
-			if (err == 0) {
-				sys_put_be16(reg, presp);
-				presp += sizeof(uint16_t);
-			}
-
-			/* Increment current register address */
-			reg_addr++;
-			reg_qty--;
-		} else if (IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
-			float fp;
-			uint32_t reg;
-
-			/* Read floating-point register */
-			err = ctx->mbs_user_cb->holding_reg_rd_fp(reg_addr, &fp);
-			if (err == 0) {
-				memcpy(&reg, &fp, sizeof(reg));
-				sys_put_be32(reg, presp);
-				presp += sizeof(uint32_t);
-			}
-
-			/* Increment current register address */
-			reg_addr += 2;
-			reg_qty -= 2;
-		}
-
-		if (err != 0) {
-			LOG_INF("Holding register address not supported");
-			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
-			return true;
-		}
-
+	err = ctx->mbs_user_cb->holding_reg_rd(reg_addr, (uint16_t*)presp, reg_qty);
+	if (err != 0) {
+		LOG_INF("Holding register address not supported");
+		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+		return true;
 	}
 
 	return true;
@@ -607,7 +576,7 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 	reg_addr = sys_get_be16(&ctx->rx_adu.data[0]);
 	reg_val = sys_get_be16(&ctx->rx_adu.data[2]);
 
-	err = ctx->mbs_user_cb->holding_reg_wr(reg_addr, reg_val);
+	err = ctx->mbs_user_cb->holding_reg_wr(reg_addr, &reg_val, 1);
 
 	if (err != 0) {
 		LOG_INF("Register address not supported");
@@ -889,33 +858,41 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	/* The 1st registers data byte is 6th element in payload */
 	prx_data = &ctx->rx_adu.data[5];
 
-	for (uint16_t reg_cntr = 0; reg_cntr < reg_qty;) {
-		uint16_t addr = reg_addr + reg_cntr;
+	err = ctx->mbs_user_cb->holding_reg_wr(reg_addr, (uint16_t*)prx_data, reg_qty);
 
-		if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
-		    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
-			uint16_t reg_val = sys_get_be16(prx_data);
+	if (err != 0) {
+ 		LOG_INF("Register address not supported");
+ 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+ 		return true;
+ 	}
 
-			prx_data += sizeof(uint16_t);
-			err = ctx->mbs_user_cb->holding_reg_wr(addr, reg_val);
-			reg_cntr++;
-		} else {
-			uint32_t reg_val = sys_get_be32(prx_data);
-			float fp;
+	// for (uint16_t reg_cntr = 0; reg_cntr < reg_qty;) {
+	// 	uint16_t addr = reg_addr + reg_cntr;
 
-			/* Write to floating point register */
-			memcpy(&fp, &reg_val, sizeof(uint32_t));
-			prx_data += sizeof(uint32_t);
-			err = ctx->mbs_user_cb->holding_reg_wr_fp(addr, fp);
-			reg_cntr += 2;
-		}
+	// 	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
+	// 	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+	// 		uint16_t reg_val = sys_get_be16(prx_data);
 
-		if (err != 0) {
-			LOG_INF("Register address not supported");
-			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
-			return true;
-		}
-	}
+	// 		prx_data += sizeof(uint16_t);
+	// 		err = ctx->mbs_user_cb->holding_reg_wr(addr, reg_val);
+	// 		reg_cntr++;
+	// 	} else {
+	// 		uint32_t reg_val = sys_get_be32(prx_data);
+	// 		float fp;
+
+	// 		/* Write to floating point register */
+	// 		memcpy(&fp, &reg_val, sizeof(uint32_t));
+	// 		prx_data += sizeof(uint32_t);
+	// 		err = ctx->mbs_user_cb->holding_reg_wr_fp(addr, fp);
+	// 		reg_cntr += 2;
+	// 	}
+
+	// 	if (err != 0) {
+	// 		LOG_INF("Register address not supported");
+	// 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+	// 		return true;
+	// 	}
+	// }
 
 	/* Assemble response payload */
 	ctx->tx_adu.length = response_len;
