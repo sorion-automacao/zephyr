@@ -561,7 +561,7 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 	const uint8_t response_len = 4;
 	int err;
 	uint16_t reg_addr;
-	uint16_t reg_val;
+	uint16_t * reg_val;
 
 	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
@@ -574,9 +574,10 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 	}
 
 	reg_addr = sys_get_be16(&ctx->rx_adu.data[0]);
-	reg_val = sys_get_be16(&ctx->rx_adu.data[2]);
+	
+	reg_val = (uint16_t*)&ctx->rx_adu.data[2];
 
-	err = ctx->mbs_user_cb->holding_reg_wr(reg_addr, &reg_val, 1);
+	err = ctx->mbs_user_cb->holding_reg_wr(reg_addr, reg_val, 1);
 
 	if (err != 0) {
 		LOG_INF("Register address not supported");
