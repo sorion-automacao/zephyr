@@ -588,7 +588,7 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 	/* Assemble response payload */
 	ctx->tx_adu.length = response_len;
 	sys_put_be16(reg_addr, &ctx->tx_adu.data[0]);
-	sys_put_be16(reg_val, &ctx->tx_adu.data[2]);
+	sys_put_be16(*reg_val, &ctx->tx_adu.data[2]);
 
 	return true;
 }
