@@ -367,7 +367,7 @@ struct modbus_user_callbacks {
 	int (*discrete_input_rd)(uint16_t addr, bool *state);
 
 	/** Input Register read callback */
-	int (*input_reg_rd)(uint16_t addr, uint16_t *reg);
+	int (*input_reg_rd)(uint16_t addr, uint16_t* reg, uint16_t reg_qty);
 
 	/** Floating Point Input Register read callback */
 	int (*input_reg_rd_fp)(uint16_t addr, float *reg);

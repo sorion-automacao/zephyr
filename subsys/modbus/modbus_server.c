@@ -441,43 +441,12 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 
 	/* Reset the pointer to the start of the response payload */
 	presp = &ctx->tx_adu.data[1];
-	/* Loop through each register requested. */
-	while (reg_qty > 0) {
-		if (reg_addr < MODBUS_FP_EXTENSIONS_ADDR) {
-			uint16_t reg;
-
-			/* Read integer register */
-			err = ctx->mbs_user_cb->input_reg_rd(reg_addr, &reg);
-			if (err == 0) {
-				sys_put_be16(reg, presp);
-				presp += sizeof(uint16_t);
-			}
-
-			/* Increment current register number */
-			reg_addr++;
-			reg_qty--;
-		} else if (IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
-			float fp;
-			uint32_t reg;
-
-			/* Read floating-point register */
-			err = ctx->mbs_user_cb->input_reg_rd_fp(reg_addr, &fp);
-			if (err == 0) {
-				memcpy(&reg, &fp, sizeof(reg));
-				sys_put_be32(reg, presp);
-				presp += sizeof(uint32_t);
-			}
-
-			/* Increment current register address */
-			reg_addr += 2;
-			reg_qty -= 2;
-		}
-
-		if (err != 0) {
-			LOG_INF("Input register address not supported");
-			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
-			return true;
-		}
+	
+	err = ctx->mbs_user_cb->input_reg_rd(reg_addr, (uint16_t*)presp, reg_qty);
+	if (err != 0) {
+		LOG_INF("Input register address not supported");
+		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+		return true;
 	}
 
 	return true;
