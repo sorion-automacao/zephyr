@@ -792,25 +792,25 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 		return true;
 	}
 
-	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
-	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
-		/* Write integer register */
-		if (ctx->mbs_user_cb->holding_reg_wr == NULL) {
-			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
-			return true;
-		}
-	} else {
-		/* Write floating-point register */
-		if (ctx->mbs_user_cb->holding_reg_wr_fp == NULL) {
-			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
-			return true;
-		}
-
-		if (num_bytes % sizeof(uint32_t)) {
-			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
-			return true;
-		}
+	if (ctx->mbs_user_cb->holding_reg_wr == NULL) {
+		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
+		return true;
 	}
+	// if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
+	//     !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+	// 	/* Write integer register */
+	// } else {
+	// 	/* Write floating-point register */
+	// 	if (ctx->mbs_user_cb->holding_reg_wr_fp == NULL) {
+	// 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
+	// 		return true;
+	// 	}
+
+	// 	if (num_bytes % sizeof(uint32_t)) {
+	// 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
+	// 		return true;
+	// 	}
+	// }
 
 	/* Compare number of bytes and payload length */
 	if ((ctx->rx_adu.length - 5) != num_bytes) {
